@@ -2,34 +2,42 @@ package com.example.thearbiter.amityseller;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.TextView;
-import android.widget.Toast;
+
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.example.thearbiter.amityseller.FirebaseDir.MySingleton;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private static final String PULL_ITEMS_URL = "http://frame.ueuo.com/midnightshop/pullOrders.php";
     JSONParser jsonParser = new JSONParser();
+    String app_server_url = "http://frame.ueuo.com/images/NotificationFirebaseShop/fcm_insert_shop.php";
     ArrayList<String> nameOfPerson = new ArrayList<>();
     ArrayList<String> productName = new ArrayList<>();
     ArrayList<String> address = new ArrayList<>();
@@ -59,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        getToken();
         new PullAllIBItems().execute();
 
         verifyStoragePermissions(this);
@@ -93,6 +101,41 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+    private void getToken() {
+        final String recent_token = FirebaseInstanceId.getInstance().getToken();
+
+        SharedPreferences sharedpref;
+        sharedpref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        SharedPreferences.Editor edit = sharedpref.edit();
+        edit.putString("token", recent_token);
+        edit.apply();
+        final String token = sharedpref.getString("token", "");
+        Log.d("TOKEN LOG", "km  " + token);
+
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, app_server_url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+            }
+        }) {
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String, String> params = new HashMap<>();
+                params.put("fcm_token", token);
+                params.put("user", "shopAdmin");
+                return params;
+            }
+        };
+        MySingleton.getmInstance(MainActivity.this).addToRequestque(stringRequest);
+    }
+
 
 
     public class PullAllIBItems extends AsyncTask<String, String, String> {
