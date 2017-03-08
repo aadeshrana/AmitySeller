@@ -225,7 +225,7 @@ public class CustomAddDiag extends DialogFragment {
                     String sendThis;
                     sendThis = sNameOfItem.replaceAll("\\s+", "");
                     Log.d("nameOF","ya"+sNameOfItem);
-                    client2.rename(namegetter[finalElement], sendThis + sPrice+".jpg");
+                    client2.rename(namegetter[finalElement], sendThis + sPrice+".JPG");
                 } catch (Exception f) {
                     f.printStackTrace();
                 }
